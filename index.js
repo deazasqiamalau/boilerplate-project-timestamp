@@ -1,39 +1,36 @@
 const express = require("express");
 const app = express();
 
-// Rute dasar (opsional)
-app.get("/", (req, res) => {
-  res.send("Timestamp Microservice");
+app.use(express.static("public"));
+
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
-// Rute utama sesuai dengan proyek FreeCodeCamp
 app.get("/api/:date?", (req, res) => {
-  const dateParam = req.params.date;
-  let date;
+  let dateInput = req.params.date;
 
-  if (!dateParam) {
-    // Jika tidak ada parameter, gunakan waktu sekarang
-    date = new Date();
-  } else if (!isNaN(dateParam)) {
-    // Jika input berupa UNIX timestamp (dalam milidetik)
-    date = new Date(parseInt(dateParam));
-  } else {
-    // Jika input berupa string tanggal biasa
-    date = new Date(dateParam);
+  // Jika tidak ada parameter
+  if (!dateInput) {
+    const now = new Date();
+    return res.json({ unix: now.getTime(), utc: now.toUTCString() });
   }
 
-  if (date.toString() === "Invalid Date") {
+  // Coba parse sebagai integer jika isinya angka
+  if (!isNaN(dateInput)) {
+    dateInput = parseInt(dateInput);
+  }
+
+  const dateObj = new Date(dateInput);
+
+  if (dateObj.toString() === "Invalid Date") {
     return res.json({ error: "Invalid Date" });
   }
 
-  res.json({
-    unix: date.getTime(),
-    utc: date.toUTCString(),
-  });
+  return res.json({ unix: dateObj.getTime(), utc: dateObj.toUTCString() });
 });
 
-// Jalankan server di port 3000
-const port = 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log("Listening on port " + port);
 });
